@@ -1,361 +1,241 @@
 """
-Truth or Dare Bot Telegram — Couple Edition 🔥
-Bahasa Indonesia | Konten: Sedang (berani tapi tidak vulgar)
-Fitur: Timer tantangan, mode couple
+Truth or Dare Bot — Group Edition 🎮
+Bahasa Indonesia | Bisa dipakai di grup | Sistem giliran bergantian
+Konten: Normal + Berani (sedang) | Timer tantangan
 
-Cara pakai:
-1. Install: pip install python-telegram-bot==20.7
-2. Ganti BOT_TOKEN dengan token dari @BotFather
-3. Jalankan: python truth_or_dare_bot.py
+pip install python-telegram-bot==21.6
 """
 
 import random
 import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application, CommandHandler, CallbackQueryHandler, ContextTypes
-)
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 BOT_TOKEN = "8588161571:AAEoEcZEX-lKsK9N_kcmdS8PF0-gE3zRzoM"
 
-# ─────────────────────────────────────────────
-#   DATABASE PERTANYAAN & TANTANGAN
-# ─────────────────────────────────────────────
-
 TRUTH_NORMAL = [
-    "Apa hal paling memalukan yang pernah kamu lakukan di depan aku?",
-    "Siapa orang pertama yang kamu suka sebelum kenal aku?",
-    "Apa yang paling kamu suka dari aku secara fisik?",
-    "Pernah nggak kamu pura-pura tidur biar nggak diajak ngobrol?",
-    "Apa mimpi paling aneh yang pernah kamu alami?",
-    "Kalau bisa mengubah satu hal dari aku, apa itu?",
-    "Apa hal yang paling kamu sembunyikan dari orang tuamu?",
-    "Seberapa sering kamu stalking media sosial mantan?",
-    "Apa yang pertama kali kamu pikirin waktu pertama lihat aku?",
-    "Pernah nggak kamu bohong ke aku? Soal apa?",
-    "Kapan terakhir kali kamu nangis dan karena apa?",
-    "Apa fantasi liburan impianmu bersama aku?",
-    "Kalau aku jadi makanan, aku jadi makanan apa?",
-    "Apa hal paling konyol yang pernah kamu lakukan demi cinta?",
-    "Siapa teman aku yang menurutmu paling menyebalkan?",
-    "Apa yang paling kamu rindukan dari aku saat jauh?",
-    "Pernah nggak kamu cemburu tapi pura-pura nggak?",
-    "Apa yang bikin kamu pertama kali jatuh cinta sama aku?",
-    "Kalau kita putus (amit-amit), apa yang paling kamu rindukan?",
-    "Seberapa sering kamu kepikiran aku dalam sehari?",
-    "Apa kebiasaan aku yang diam-diam mengganggu kamu?",
-    "Pernah nggak kamu bacain chat aku tanpa bilang?",
-    "Apa hal terkonyol yang pernah kamu lakuin buat impress aku?",
-    "Siapa artis yang menurut kamu paling mirip aku?",
-    "Apa yang paling kamu banggain dari hubungan kita?",
+    "Siapa orang yang paling sering kamu stalking di media sosial?",
+    "Apa kebohongan terbesar yang pernah kamu ucapkan ke orang tua?",
+    "Pernah nggak kamu suka sama teman sendiri? Siapa?",
+    "Apa hal paling memalukan yang pernah terjadi padamu di depan umum?",
+    "Kalau bisa hapus satu memory, memory apa yang kamu pilih?",
+    "Siapa di grup ini yang menurutmu paling misterius?",
+    "Apa hal yang paling kamu sembunyikan dari teman-teman di sini?",
+    "Pernah nggak kamu nangis gara-gara nonton film/drakor? Film apa?",
+    "Apa makanan yang paling kamu benci tapi pura-pura suka?",
+    "Siapa di grup ini yang pertama kamu hubungi kalau ada masalah?",
+    "Pernah nggak kamu sengaja ignore chat seseorang? Siapa?",
+    "Apa aplikasi yang paling banyak kamu pakai tapi malu ngakuinnya?",
+    "Berapa lama waktu terlama kamu tidak mandi?",
+    "Apa hal paling konyol yang pernah kamu lakuin demi gebetan?",
+    "Pernah nggak kamu bohong soal posisi kamu ke orang tua?",
+    "Siapa di grup ini yang paling kamu kagumi diam-diam?",
+    "Apa kebiasaan jelek kamu yang tidak banyak orang tahu?",
+    "Pernah nggak kamu baca chat orang lain tanpa izin?",
+    "Kapan terakhir kali kamu nangis dan kenapa?",
+    "Apa hal yang paling kamu sesali dalam hidup?",
+    "Siapa mantan yang masih kamu stalk sampai sekarang?",
+    "Apa hal paling mahal yang pernah kamu sembunyikan dari orang tua?",
+    "Pernah nggak kamu pura-pura sakit biar nggak masuk sekolah/kerja?",
+    "Apa ketakutan terbesar kamu yang belum banyak orang tahu?",
+    "Siapa di grup ini yang paling susah dibaca perasaannya?",
+    "Pernah nggak kamu naksir teman yang sudah punya pacar?",
+    "Apa hal yang paling kamu inginkan tapi belum berani bilang ke orang tua?",
+    "Kalau bisa jujur ke satu orang di grup ini, apa yang mau kamu katakan?",
+    "Berapa nilai paling jelek yang pernah kamu dapat dan mata pelajaran apa?",
+    "Apa lagu yang selalu kamu putar waktu galau?",
 ]
 
-TRUTH_18PLUS = [
-    "Bagian tubuhku mana yang paling kamu suka?",
-    "Apa hal romantis yang pengen banget kamu lakuin sama aku tapi belum kesampaian?",
-    "Ceritain mimpi terliar tentang aku yang pernah kamu alami!",
-    "Di mana tempat paling 'gila' yang pengen kamu kunjungi berdua sama aku?",
-    "Apa kalimat rayuan yang paling mempan buat kamu?",
-    "Kalau kita bisa kencan mewah tanpa batas budget, kamu mau ngapain?",
-    "Hal apa yang bisa bikin kamu langsung baper sama seseorang?",
-    "Apa tipe sentuhan yang paling bikin kamu merasa dicintai?",
-    "Pernah nggak kamu punya pikiran nakal tentang aku di tempat umum?",
-    "Apa yang pengen kamu lakukan kalau kita berdua sendirian tanpa gangguan seharian penuh?",
-    "Apa kata-kata dari aku yang paling bikin kamu meleleh?",
-    "Kalau kamu bisa milih, mau kencan di mana yang paling romantis dan intim?",
-    "Apa hal yang bikin kamu merasa paling dicintai oleh aku?",
-    "Bagaimana cara pelukan yang paling kamu suka dari aku?",
-    "Apa yang kamu pikirkan saat aku pergi dan kita lagi LDR?",
+TRUTH_BERANI = [
+    "Siapa di grup ini yang menurutmu paling good-looking?",
+    "Pernah nggak kamu punya perasaan lebih ke salah satu orang di grup ini?",
+    "Apa tipe orang yang bikin kamu langsung baper?",
+    "Ceritakan pengalaman kencan paling canggung yang pernah kamu alami!",
+    "Siapa yang pertama kali kamu suka dan apa yang terjadi?",
+    "Pernah nggak kamu di-ghosting? Bagaimana perasaanmu?",
+    "Apa hal romantis yang ingin kamu lakukan tapi belum kesampaian?",
+    "Siapa orang yang pernah bikin jantung kamu deg-degan cuma dengan tatapannya?",
+    "Pernah nggak kamu kirim pesan ke orang yang salah? Isi pesannya apa?",
+    "Apa yang bikin kamu jatuh cinta sama seseorang?",
+    "Pernah nggak kamu naksir teman dekat sendiri?",
+    "Kalau harus pilih satu orang di grup ini untuk dijadikan pasangan, siapa?",
+    "Apa hal paling berani yang pernah kamu lakukan untuk seseorang yang kamu suka?",
+    "Pernah nggak kamu dapat atau kirim pesan yang terlalu personal ke orang yang salah?",
+    "Apa tipe pasangan ideal kamu? Sebutkan 3 kriteria!",
 ]
 
 DARE_NORMAL = [
-    {"text": "Nyanyiin lagu favorit kamu dengan suara paling fals selama 30 detik!", "timer": 30},
-    {"text": "Kirim pesan 'I love you' ke kontak pertama di HP kamu (selain aku)!", "timer": 0},
-    {"text": "Lakukan 10 push-up sekarang juga!", "timer": 60},
-    {"text": "Telepon seseorang secara acak dan bilang 'Halo, ini dari pizza?'", "timer": 0},
-    {"text": "Posting foto paling jelek kamu di story selama 5 menit!", "timer": 300},
-    {"text": "Tirukan gaya jalan model catwalk dari ujung ruangan ke ujung lainnya!", "timer": 20},
-    {"text": "Minta aku foto kamu dengan pose paling aneh!", "timer": 30},
-    {"text": "Ceritain lelucon terbodoh yang kamu tahu!", "timer": 60},
-    {"text": "Bicara dengan aksen bahasa Inggris Inggris selama 2 menit ke depan!", "timer": 120},
-    {"text": "Kirim GIF paling memalukan ke grup keluarga!", "timer": 0},
+    {"text": "Nyanyikan lagu yang sedang hits sekarang selama 30 detik, harus keras!", "timer": 30},
+    {"text": "Lakukan 15 push-up sekarang juga di depan semua orang!", "timer": 90},
+    {"text": "Kirim pesan 'Aku kangen kamu 😘' ke kontak pertama di HP kamu!", "timer": 0},
+    {"text": "Tirukan gaya bicara dan tingkah laku salah satu orang di grup ini!", "timer": 30},
+    {"text": "Posting foto selfie paling jelek kamu di story selama 5 menit!", "timer": 300},
+    {"text": "Telepon seseorang secara acak dari kontakmu dan bilang 'Halo, ini dari pizza?'", "timer": 0},
+    {"text": "Lakukan catwalk dari ujung ruangan ke ujung lainnya dengan pose model!", "timer": 20},
+    {"text": "Ceritakan lelucon terbodoh yang kamu tahu!", "timer": 60},
+    {"text": "Bicara dengan aksen Sunda/Jawa/Batak selama 2 menit ke depan!", "timer": 120},
+    {"text": "Lakukan 20 jumping jack sambil menyebut nama orang di sebelahmu!", "timer": 60},
+    {"text": "Gambar potret salah satu orang di grup dalam 30 detik, tunjukkan hasilnya!", "timer": 30},
+    {"text": "Tirukan 3 seleb Indonesia yang berbeda dalam 1 menit!", "timer": 60},
+    {"text": "Kirim GIF paling cringe ke grup keluarga dan screenshot reaksinya!", "timer": 0},
+    {"text": "Berikan pidato motivasi selama 1 menit dengan penuh semangat!", "timer": 60},
+    {"text": "Tirukan suara 5 binatang berbeda!", "timer": 30},
+    {"text": "Buat status WA yang aneh dan biarkan minimal 10 menit!", "timer": 600},
+    {"text": "Lakukan gerakan dance TikTok paling viral yang kamu tahu selama 30 detik!", "timer": 30},
+    {"text": "Ceritakan kisah hidupmu dalam 60 detik, harus dramatis!", "timer": 60},
+    {"text": "Lakukan plank selama 30 detik!", "timer": 30},
+    {"text": "Foto bareng orang di sebelahmu dengan ekspresi paling lebay!", "timer": 30},
+    {"text": "Berdiri dan lakukan gerakan senam poco-poco selama 30 detik!", "timer": 30},
+    {"text": "Kirim voice note nyanyi ke grup keluarga kamu!", "timer": 0},
+    {"text": "Tirukan cara jalan robot selama 1 menit!", "timer": 60},
     {"text": "Makan sesuatu dengan mata tertutup dan tebak apa itu!", "timer": 30},
-    {"text": "Dance selama 1 menit dengan lagu yang aku pilihkan!", "timer": 60},
-    {"text": "Lakukan 20 lompatan bintang (jumping jack) sekarang!", "timer": 60},
-    {"text": "Ceritakan kisah hidup kamu dalam 60 detik!", "timer": 60},
-    {"text": "Tirukan suara 3 binatang berbeda!", "timer": 30},
-    {"text": "Tulis status WA yang aneh dan biarkan selama 10 menit!", "timer": 600},
-    {"text": "Lakukan push-up sambil menyebut nama aku setiap kali turun!", "timer": 45},
-    {"text": "Berikan pidato singkat tentang betapa luar biasanya aku!", "timer": 60},
-    {"text": "Tirukan 3 seleb berbeda dalam 1 menit!", "timer": 60},
-    {"text": "Gambar potret wajahku dalam 30 detik!", "timer": 30},
+    {"text": "Berikan pidato singkat betapa luar biasanya orang di sebelahmu!", "timer": 45},
 ]
 
-DARE_18PLUS = [
-    {"text": "Berikan pijatan bahu ke aku selama 2 menit!", "timer": 120},
-    {"text": "Bisikkan kata-kata manis di telinga aku selama 30 detik!", "timer": 30},
-    {"text": "Cium kening aku tiga kali berturut-turut!", "timer": 0},
-    {"text": "Peluk aku dari belakang selama 1 menit penuh tanpa bicara!", "timer": 60},
-    {"text": "Tuliskan namaku di tanganmu sekarang!", "timer": 30},
-    {"text": "Kirim voice note yang isinya kamu nyatain cinta dengan serius!", "timer": 0},
-    {"text": "Pegang tanganku dan tatap mataku selama 30 detik tanpa senyum!", "timer": 30},
-    {"text": "Deskripsikan aku menggunakan 5 kata yang paling romantis menurut kamu!", "timer": 60},
-    {"text": "Berikan aku compliment tulus tentang 3 hal berbeda dari aku!", "timer": 60},
-    {"text": "Nyanyi lagu romantis untuk aku meski fals, selama 1 menit!", "timer": 60},
-    {"text": "Kirim pesan panjang ke aku tentang kenapa kamu bersyukur kita bersama!", "timer": 0},
-    {"text": "Gambar hati di tangan aku menggunakan jarimu!", "timer": 20},
-    {"text": "Bilang 'Aku sayang kamu' dengan 5 bahasa berbeda!", "timer": 60},
-    {"text": "Berikan ciuman di pipi aku sekarang!", "timer": 0},
-    {"text": "Rekam video pendek 30 detik tentang hal yang paling kamu cintai dari aku!", "timer": 30},
+DARE_BERANI = [
+    {"text": "Bisikkan kata-kata gombal ke telinga orang di sebelahmu!", "timer": 0},
+    {"text": "Berikan pijatan bahu ke orang di sebelahmu selama 1 menit!", "timer": 60},
+    {"text": "Tulis nama crush kamu di tangan dan tunjukkan ke semua orang!", "timer": 30},
+    {"text": "Kirim voice note ke mantan/gebetanmu dengan isi 'Aku kangen'!", "timer": 0},
+    {"text": "Pegang tangan orang di sebelahmu dan tatap matanya selama 30 detik tanpa ketawa!", "timer": 30},
+    {"text": "Ceritakan tipe idealmu dengan detail di depan semua orang!", "timer": 60},
+    {"text": "Kirim pesan 'Aku suka kamu' ke gebetan kamu sekarang!", "timer": 0},
+    {"text": "Nyanyikan lagu romantis untuk orang di sebelahmu meski fals, minimal 1 menit!", "timer": 60},
+    {"text": "Ceritakan pengalaman jatuh cinta pertamamu dengan detail!", "timer": 90},
+    {"text": "Tuliskan nama orang yang kamu suka di kertas dan tunjukkan ke semua orang!", "timer": 0},
+    {"text": "Bilang 'Kamu cantik/ganteng banget' ke setiap orang di grup satu per satu!", "timer": 60},
+    {"text": "Deskripsikan orang yang kamu suka tanpa menyebut nama, biarkan orang lain tebak!", "timer": 60},
+    {"text": "Berikan high five ke semua orang di grup sambil bilang 'Kamu luar biasa!'", "timer": 30},
+    {"text": "Rekam video 30 detik cerita kenapa kamu masih jomblo / kenapa kamu happy punya pasangan!", "timer": 30},
+    {"text": "Minta foto bareng salah satu orang di grup dengan gaya paling romantis!", "timer": 30},
 ]
 
-# ─────────────────────────────────────────────
-#   HELPER FUNCTIONS
-# ─────────────────────────────────────────────
-
-def get_main_keyboard():
-    keyboard = [
+def main_keyboard(mode="normal"):
+    mode_btn = InlineKeyboardButton("🌶️ Berani ON" if mode == "berani" else "😇 Normal ON", 
+                                     callback_data="toggle_mode")
+    return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("🤔 TRUTH", callback_data="truth_menu"),
-            InlineKeyboardButton("🔥 DARE", callback_data="dare_menu"),
+            InlineKeyboardButton("🤔 TRUTH", callback_data="get_truth"),
+            InlineKeyboardButton("🔥 DARE", callback_data="get_dare"),
         ],
-        [InlineKeyboardButton("🎲 RANDOM!", callback_data="random_all")],
-        [InlineKeyboardButton("📊 Skor Kita", callback_data="score")],
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_truth_keyboard():
-    keyboard = [
-        [
-            InlineKeyboardButton("😇 Normal", callback_data="truth_normal"),
-            InlineKeyboardButton("🌶️ Berani", callback_data="truth_18"),
-        ],
-        [InlineKeyboardButton("🔙 Kembali", callback_data="main_menu")],
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_dare_keyboard():
-    keyboard = [
-        [
-            InlineKeyboardButton("😇 Normal", callback_data="dare_normal"),
-            InlineKeyboardButton("🌶️ Berani", callback_data="dare_18"),
-        ],
-        [InlineKeyboardButton("🔙 Kembali", callback_data="main_menu")],
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-def get_after_keyboard(has_timer=False, timer_seconds=0, callback_timer=""):
-    keyboard = []
-    if has_timer and timer_seconds > 0:
-        keyboard.append([InlineKeyboardButton(
-            f"⏱️ Mulai Timer {timer_seconds}s", callback_data=f"timer_{timer_seconds}"
-        )])
-    keyboard.append([
-        InlineKeyboardButton("🤔 Truth Lagi", callback_data="truth_menu"),
-        InlineKeyboardButton("🔥 Dare Lagi", callback_data="dare_menu"),
+        [InlineKeyboardButton("🎲 ACAK!", callback_data="get_acak")],
+        [mode_btn],
     ])
-    keyboard.append([InlineKeyboardButton("🏠 Menu Utama", callback_data="main_menu")])
-    return InlineKeyboardMarkup(keyboard)
 
-# ─────────────────────────────────────────────
-#   COMMAND HANDLERS
-# ─────────────────────────────────────────────
+def play_again_keyboard(timer=0, mode="normal"):
+    rows = []
+    if timer > 0:
+        rows.append([InlineKeyboardButton(f"⏱️ Mulai Timer {timer}s", callback_data=f"timer_{timer}")])
+    rows.append([
+        InlineKeyboardButton("🤔 TRUTH", callback_data="get_truth"),
+        InlineKeyboardButton("🔥 DARE", callback_data="get_dare"),
+    ])
+    rows.append([InlineKeyboardButton("🎲 ACAK!", callback_data="get_acak")])
+    return InlineKeyboardMarkup(rows)
+
+def get_mode(context):
+    return context.chat_data.get("mode", "normal")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if "scores" not in context.chat_data:
-        context.chat_data["scores"] = {}
-    
+    mode = get_mode(context)
     text = (
-        f"🎮 *Halo, {user.first_name}!* Selamat datang di\n\n"
-        "💕 *TRUTH OR DARE — Couple Edition* 💕\n\n"
-        "Permainan jujur-jujuran dan tantangan seru buat kalian berdua! "
-        "Ada mode normal dan mode *berani* 🌶️\n\n"
-        "Pilih giliran siapa dulu, lalu mulai! 🎲"
+        "🎮 *TRUTH OR DARE — Siap main!*\n\n"
+        "• Klik *TRUTH* → dapat pertanyaan jujur-jujuran\n"
+        "• Klik *DARE* → dapat tantangan\n"
+        "• Klik *ACAK* → bot yang milih!\n\n"
+        "Bergantian klik ya — giliran siapa dulu? 👇"
     )
-    await update.message.reply_text(
-        text, parse_mode="Markdown", reply_markup=get_main_keyboard()
-    )
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=main_keyboard(mode))
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "📖 *Cara Main Truth or Dare:*\n\n"
-        "1️⃣ Pilih *TRUTH* untuk pertanyaan jujur-jujuran\n"
-        "2️⃣ Pilih *DARE* untuk tantangan\n"
-        "3️⃣ Pilih *RANDOM* biar bot yang milih!\n"
-        "4️⃣ Mode *Normal* = aman dan seru\n"
-        "5️⃣ Mode *Berani* 🌶️ = lebih intim & romantis\n\n"
-        "⏱️ Tantangan dengan timer: kamu harus selesaikan dalam waktu yang ditentukan!\n\n"
-        "Gunakan /skor untuk lihat poin kalian.\n"
-        "Gunakan /reset untuk mulai ulang permainan."
-    )
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
-
-async def skor_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def skor_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     scores = context.chat_data.get("scores", {})
     if not scores:
-        text = "📊 Belum ada skor! Mainkan dulu yuk~ 🎮"
-    else:
-        text = "📊 *Skor Kalian:*\n\n"
-        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        medals = ["🥇", "🥈", "🥉"]
-        for i, (name, score) in enumerate(sorted_scores):
-            medal = medals[i] if i < 3 else "🏅"
-            text += f"{medal} *{name}*: {score} poin\n"
+        await update.message.reply_text("📊 Belum ada skor! Mulai main dulu~ 🎮")
+        return
+    text = "📊 *Skor Permainan:*\n\n"
+    medals = ["🥇", "🥈", "🥉"]
+    for i, (name, score) in enumerate(sorted(scores.items(), key=lambda x: x[1], reverse=True)):
+        medal = medals[i] if i < 3 else "🏅"
+        text += f"{medal} *{name}*: {score} poin\n"
     await update.message.reply_text(text, parse_mode="Markdown")
 
-async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def reset_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.chat_data["scores"] = {}
-    await update.message.reply_text(
-        "🔄 *Permainan di-reset!* Mulai lagi dari awal ya~ 💕",
-        parse_mode="Markdown", reply_markup=get_main_keyboard()
-    )
+    await update.message.reply_text("🔄 Skor di-reset! Mulai lagi~ 🎮")
 
-# ─────────────────────────────────────────────
-#   CALLBACK HANDLERS
-# ─────────────────────────────────────────────
-
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
+    user = query.from_user.first_name
+    mode = get_mode(context)
 
-    if data == "main_menu":
-        await query.edit_message_text(
-            "🎮 *TRUTH OR DARE — Couple Edition* 💕\n\nPilih giliran siapa dulu!",
-            parse_mode="Markdown", reply_markup=get_main_keyboard()
-        )
+    if data == "toggle_mode":
+        new_mode = "berani" if mode == "normal" else "normal"
+        context.chat_data["mode"] = new_mode
+        label = "🌶️ Mode Berani aktif!" if new_mode == "berani" else "😇 Mode Normal aktif!"
+        await query.answer(label, show_alert=True)
+        try:
+            await query.edit_message_reply_markup(reply_markup=main_keyboard(new_mode))
+        except Exception:
+            pass
+        return
 
-    elif data == "truth_menu":
-        await query.edit_message_text(
-            "🤔 *TRUTH* — Pilih levelnya:\n\n"
-            "😇 *Normal* — Pertanyaan seru dan lucu\n"
-            "🌶️ *Berani* — Lebih intim dan romantis",
-            parse_mode="Markdown", reply_markup=get_truth_keyboard()
-        )
+    if data == "get_truth":
+        pool = TRUTH_BERANI if mode == "berani" else TRUTH_NORMAL
+        q = random.choice(pool)
+        emoji = "🌶️" if mode == "berani" else "😇"
+        text = f"🤔 *TRUTH {emoji}*\n_Giliran: {user}_\n\n_{q}_\n\n✅ Jawab dengan jujur!"
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=play_again_keyboard(mode=mode))
 
-    elif data == "dare_menu":
-        await query.edit_message_text(
-            "🔥 *DARE* — Pilih levelnya:\n\n"
-            "😇 *Normal* — Tantangan seru dan kocak\n"
-            "🌶️ *Berani* — Lebih intim dan romantis",
-            parse_mode="Markdown", reply_markup=get_dare_keyboard()
-        )
+    elif data == "get_dare":
+        pool = DARE_BERANI if mode == "berani" else DARE_NORMAL
+        d = random.choice(pool)
+        emoji = "🌶️" if mode == "berani" else "😇"
+        timer_text = f"\n\n⏱️ *Waktu: {d['timer']} detik*" if d["timer"] > 0 else ""
+        text = f"🔥 *DARE {emoji}*\n_Giliran: {user}_\n\n_{d['text']}_{timer_text}"
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=play_again_keyboard(d["timer"], mode))
 
-    elif data == "truth_normal":
-        q = random.choice(TRUTH_NORMAL)
-        text = f"🤔 *TRUTH — Normal*\n\n_{q}_\n\n✅ Jawab dengan jujur ya!"
-        await query.edit_message_text(
-            text, parse_mode="Markdown", reply_markup=get_after_keyboard()
-        )
-
-    elif data == "truth_18":
-        q = random.choice(TRUTH_18PLUS)
-        text = f"🌶️ *TRUTH — Berani*\n\n_{q}_\n\n✅ Jujur ya, nggak boleh bohong! 😏"
-        await query.edit_message_text(
-            text, parse_mode="Markdown", reply_markup=get_after_keyboard()
-        )
-
-    elif data == "dare_normal":
-        d = random.choice(DARE_NORMAL)
-        has_timer = d["timer"] > 0
-        text = (
-            f"🔥 *DARE — Normal*\n\n_{d['text']}_\n\n"
-            + (f"⏱️ Waktu: *{d['timer']} detik*" if has_timer else "")
-        )
-        await query.edit_message_text(
-            text, parse_mode="Markdown",
-            reply_markup=get_after_keyboard(has_timer, d["timer"])
-        )
-
-    elif data == "dare_18":
-        d = random.choice(DARE_18PLUS)
-        has_timer = d["timer"] > 0
-        text = (
-            f"🌶️ *DARE — Berani*\n\n_{d['text']}_\n\n"
-            + (f"⏱️ Waktu: *{d['timer']} detik*" if has_timer else "")
-        )
-        await query.edit_message_text(
-            text, parse_mode="Markdown",
-            reply_markup=get_after_keyboard(has_timer, d["timer"])
-        )
-
-    elif data == "random_all":
-        coin = random.choice(["truth", "dare"])
-        level = random.choice(["normal", "berani"])
-
-        if coin == "truth":
-            pool = TRUTH_NORMAL if level == "normal" else TRUTH_18PLUS
+    elif data == "get_acak":
+        pilihan = random.choice(["truth", "dare"])
+        if pilihan == "truth":
+            pool = TRUTH_BERANI if mode == "berani" else TRUTH_NORMAL
             q = random.choice(pool)
-            emoji = "😇" if level == "normal" else "🌶️"
-            text = f"🎲 *RANDOM — TRUTH {emoji}*\n\n_{q}_\n\n✅ Jawab dengan jujur!"
-            await query.edit_message_text(
-                text, parse_mode="Markdown", reply_markup=get_after_keyboard()
-            )
+            emoji = "🌶️" if mode == "berani" else "😇"
+            text = f"🎲 *ACAK → TRUTH {emoji}*\n_Giliran: {user}_\n\n_{q}_\n\n✅ Jawab dengan jujur!"
+            await query.edit_message_text(text, parse_mode="Markdown", reply_markup=play_again_keyboard(mode=mode))
         else:
-            pool = DARE_NORMAL if level == "normal" else DARE_18PLUS
+            pool = DARE_BERANI if mode == "berani" else DARE_NORMAL
             d = random.choice(pool)
-            has_timer = d["timer"] > 0
-            emoji = "😇" if level == "normal" else "🌶️"
-            text = (
-                f"🎲 *RANDOM — DARE {emoji}*\n\n_{d['text']}_\n\n"
-                + (f"⏱️ Waktu: *{d['timer']} detik*" if has_timer else "")
-            )
-            await query.edit_message_text(
-                text, parse_mode="Markdown",
-                reply_markup=get_after_keyboard(has_timer, d["timer"])
-            )
-
-    elif data == "score":
-        scores = context.chat_data.get("scores", {})
-        if not scores:
-            text = "📊 Belum ada skor! Mainkan dulu yuk~ 🎮"
-        else:
-            text = "📊 *Skor Kalian:*\n\n"
-            for name, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
-                text += f"• *{name}*: {score} poin\n"
-        keyboard = [[InlineKeyboardButton("🏠 Menu Utama", callback_data="main_menu")]]
-        await query.edit_message_text(
-            text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+            emoji = "🌶️" if mode == "berani" else "😇"
+            timer_text = f"\n\n⏱️ *Waktu: {d['timer']} detik*" if d["timer"] > 0 else ""
+            text = f"🎲 *ACAK → DARE {emoji}*\n_Giliran: {user}_\n\n_{d['text']}_{timer_text}"
+            await query.edit_message_text(text, parse_mode="Markdown", reply_markup=play_again_keyboard(d["timer"], mode))
 
     elif data.startswith("timer_"):
         seconds = int(data.split("_")[1])
-        mins = seconds // 60
-        secs = seconds % 60
-        time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
-        
-        # Kirim pesan timer countdown
         msg = await query.message.reply_text(
-            f"⏱️ *Timer dimulai!* — {time_str}\n\n🟢 MULAI SEKARANG!",
+            f"⏱️ *Timer dimulai!* — {seconds} detik\n\n🟢 *MULAI SEKARANG!*",
             parse_mode="Markdown"
         )
-        
-        # Countdown setiap 10 detik
+        total = seconds
         remaining = seconds
-        checkpoints = []
         while remaining > 10:
-            remaining -= 10
-            checkpoints.append(remaining)
-        
-        for cp in checkpoints:
             await asyncio.sleep(10)
+            remaining -= 10
+            pct = remaining / total
+            bar = "🟩" * int(pct * 10) + "⬜" * (10 - int(pct * 10))
             try:
-                await msg.edit_text(
-                    f"⏱️ *Timer berjalan...*\n\n⏳ Sisa: *{cp} detik*",
-                    parse_mode="Markdown"
-                )
+                await msg.edit_text(f"⏱️ *Timer berjalan...*\n\n{bar}\n⏳ Sisa: *{remaining} detik*", parse_mode="Markdown")
             except Exception:
                 pass
-        
-        await asyncio.sleep(min(10, seconds))
+        await asyncio.sleep(remaining)
         try:
             await msg.edit_text(
-                "🔔 *WAKTU HABIS!* ⏰\n\n"
-                "Apakah berhasil? 🎉",
+                "🔔 *WAKTU HABIS!* ⏰\n\nApakah berhasil? 👇",
                 parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("✅ Berhasil (+1 poin)", callback_data=f"win_{query.from_user.first_name}"),
+                    InlineKeyboardButton("✅ Berhasil (+1)", callback_data=f"win_{query.from_user.first_name}"),
                     InlineKeyboardButton("❌ Gagal", callback_data="fail"),
                 ]])
             )
@@ -369,37 +249,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.chat_data["scores"][name] = context.chat_data["scores"].get(name, 0) + 1
         score = context.chat_data["scores"][name]
         await query.edit_message_text(
-            f"🎉 *{name} berhasil!* +1 poin\n\n"
-            f"Total skor *{name}*: {score} poin 🏆",
+            f"🎉 *{name} berhasil!* +1 poin\nTotal: *{score} poin* 🏆",
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🏠 Menu Utama", callback_data="main_menu")
-            ]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎮 Lanjut Main!", callback_data="get_acak")]])
         )
 
     elif data == "fail":
         await query.edit_message_text(
-            "😅 *Sayang sekali!* Coba lagi next round ya~\n\nTetap semangat! 💪",
+            f"😅 Sayang sekali, *{user}*! Coba lagi next round~",
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🏠 Menu Utama", callback_data="main_menu")
-            ]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎮 Lanjut Main!", callback_data="get_acak")]])
         )
-
-# ─────────────────────────────────────────────
-#   MAIN
-# ─────────────────────────────────────────────
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
-    
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("skor", skor_command))
-    app.add_handler(CommandHandler("reset", reset_command))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    
-    print("🤖 Bot Truth or Dare aktif! Tekan Ctrl+C untuk berhenti.")
+    app.add_handler(CommandHandler("skor", skor_cmd))
+    app.add_handler(CommandHandler("reset", reset_cmd))
+    app.add_handler(CallbackQueryHandler(button))
+    print("🎮 Bot Truth or Dare Group aktif!")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
